@@ -1,7 +1,7 @@
 resource "digitalocean_droplet" "test-1" {
   name     = "test-1"
   image    = "freebsd-12-x64-zfs"
-  region   = "sfo2"
+  region   = var.region
   size     = "s-1vcpu-1gb"
   ssh_keys = [
     data.digitalocean_ssh_key.terraform.id

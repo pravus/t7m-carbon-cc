@@ -60,13 +60,15 @@ terraform apply -var-file=staging.tfvars
 The entire staging environment can be destroyed with the following command:
 
 ```bash
-terraform apply -destroy -var-file=staging.tfvars
+terraform plan -destroy -out destroy.tfplan -var-file=staging.tfvars
+terraform apply destroy.tfplan
 ```
 
 You can then clean the local Terraform environment:
 
 ```bash
-rm -f .terraform terraform.tfstate terraform.tfstate.backup
+rm -rf .terraform
+rm -f terraform.tfstate terraform.tfstate.backup destroy.tfplan
 ```
 
 ## Limitations

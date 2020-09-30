@@ -12,7 +12,7 @@ data "digitalocean_domain" "carbon-cc" {
   name = "carbon.cc"
 }
 
-variable "k8s_region" {
+variable "region" {
   type    = string
   default = "nyc3"
 }

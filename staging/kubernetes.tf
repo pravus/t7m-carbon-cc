@@ -1,6 +1,6 @@
 resource "digitalocean_kubernetes_cluster" "staging" {
   name    = "staging"
-  region  = var.k8s_region
+  region  = var.region
   version = "1.18.8-do.0"
   tags    = ["staging"]
 
