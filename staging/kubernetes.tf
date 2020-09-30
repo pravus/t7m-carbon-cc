@@ -1,11 +1,6 @@
-variable "k8s_staging_host" {
-  type    = string
-  default = "stage"
-}
-
 resource "digitalocean_kubernetes_cluster" "staging" {
   name    = "staging"
-  region  = "nyc3"
+  region  = var.k8s_region
   version = "1.18.8-do.0"
   tags    = ["staging"]
 
@@ -38,12 +33,12 @@ provider "helm" {
 }
 
 resource "digitalocean_container_registry_docker_credentials" "staging" {
-  registry_name = "registry-carbon-cc"
+  registry_name = var.docker_registry
 }
 
 resource "kubernetes_secret" "staging" {
   metadata {
-    name = "registry-registry-carbon-cc"
+    name = "registry-${var.docker_registry}"
   }
   type = "kubernetes.io/dockerconfigjson"
   data = {
@@ -80,7 +75,6 @@ resource "kubernetes_deployment" "www-carbon-cc" {
       app = "www-carbon-cc"
     }
   }
-
   spec {
     replicas = 2
     selector {
@@ -97,7 +91,7 @@ resource "kubernetes_deployment" "www-carbon-cc" {
       spec {
         container {
           name  = "www"
-          image = "registry.digitalocean.com/registry-carbon-cc/www-carbon-cc:v0.0.7"
+          image = "registry.digitalocean.com/${var.docker_registry}/www-carbon-cc:v0.0.7"
           port {
             container_port = 8000
           }
@@ -130,7 +124,6 @@ resource "kubernetes_deployment" "www-at-jhord-http" {
       app = "www-at-jhord-http"
     }
   }
-
   spec {
     replicas = 2
     selector {
@@ -147,7 +140,7 @@ resource "kubernetes_deployment" "www-at-jhord-http" {
       spec {
         container {
           name  = "www"
-          image = "registry.digitalocean.com/registry-carbon-cc/www-at-jhord-http:v0.0.18"
+          image = "registry.digitalocean.com/${var.docker_registry}/www-at-jhord-http:v0.0.18"
           port {
             container_port = 8000
           }
@@ -180,7 +173,6 @@ resource "kubernetes_deployment" "www-at-jhord-grpc" {
       app = "www-at-jhord-grpc"
     }
   }
-
   spec {
     replicas = 2
     selector {
@@ -197,7 +189,7 @@ resource "kubernetes_deployment" "www-at-jhord-grpc" {
       spec {
         container {
           name  = "www"
-          image = "registry.digitalocean.com/registry-carbon-cc/www-at-jhord-grpc:v0.0.18"
+          image = "registry.digitalocean.com/${var.docker_registry}/www-at-jhord-grpc:v0.0.18"
           port {
             container_port = 5000
           }
@@ -231,7 +223,7 @@ resource "kubernetes_ingress" "www" {
       "nginx.ingress.kubernetes.io/use-regex" = "true"
       "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
       "nginx.ingress.kubernetes.io/from-to-www-redirect" = "true"
-      "service.beta.kubernetes.io/do-loadbalancer-hostname" = "${var.k8s_staging_host}.${data.digitalocean_domain.carbon-cc.name}"
+      "service.beta.kubernetes.io/do-loadbalancer-hostname" = "${var.k8s_host}.${data.digitalocean_domain.carbon-cc.name}"
       "service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https" = "true"
       "service.beta.kubernetes.io/do-loadbalancer-healthcheck-port" = "80"
       "service.beta.kubernetes.io/do-loadbalancer-healthcheck-protocol" = "http"
@@ -244,7 +236,7 @@ resource "kubernetes_ingress" "www" {
   }
   spec {
     rule {
-      host = "${var.k8s_staging_host}.${data.digitalocean_domain.carbon-cc.name}"
+      host = "${var.k8s_host}.${data.digitalocean_domain.carbon-cc.name}"
       http {
 
         path {
@@ -270,6 +262,6 @@ resource "kubernetes_ingress" "www" {
 resource "digitalocean_record" "staging" {
   domain = data.digitalocean_domain.carbon-cc.name
   type   = "A"
-  name   = var.k8s_staging_host
+  name   = var.k8s_host
   value  = kubernetes_ingress.www.load_balancer_ingress[0].ip
 }
