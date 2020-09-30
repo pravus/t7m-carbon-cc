@@ -26,7 +26,6 @@ provider "kubernetes" {
   )
 }
 
-
 provider "helm" {
   kubernetes {
     load_config_file = false
@@ -35,6 +34,29 @@ provider "helm" {
     cluster_ca_certificate = base64decode(
       digitalocean_kubernetes_cluster.staging.kube_config[0].cluster_ca_certificate
     )
+  }
+}
+
+resource "digitalocean_container_registry_docker_credentials" "staging" {
+  registry_name = "registry-carbon-cc"
+}
+
+resource "kubernetes_secret" "staging" {
+  metadata {
+    name = "registry-registry-carbon-cc"
+  }
+  type = "kubernetes.io/dockerconfigjson"
+  data = {
+    ".dockerconfigjson" = digitalocean_container_registry_docker_credentials.staging.docker_credentials
+  }
+}
+
+resource "kubernetes_default_service_account" "staging" {
+  metadata {
+    namespace = "default"
+  }
+  image_pull_secret {
+    name = kubernetes_secret.staging.metadata[0].name
   }
 }
 
@@ -79,9 +101,6 @@ resource "kubernetes_deployment" "www-carbon-cc" {
           port {
             container_port = 8000
           }
-        }
-        image_pull_secrets {
-          name = "registry-registry-carbon-cc"
         }
       }
     }
@@ -133,9 +152,6 @@ resource "kubernetes_deployment" "www-at-jhord-http" {
             container_port = 8000
           }
         }
-        image_pull_secrets {
-          name = "registry-registry-carbon-cc"
-        }
       }
     }
   }
@@ -185,9 +201,6 @@ resource "kubernetes_deployment" "www-at-jhord-grpc" {
           port {
             container_port = 5000
           }
-        }
-        image_pull_secrets {
-          name = "registry-registry-carbon-cc"
         }
       }
     }
