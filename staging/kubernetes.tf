@@ -1,7 +1,7 @@
 resource "digitalocean_kubernetes_cluster" "staging" {
   name    = "staging"
   region  = var.region
-  version = "1.18.8-do.0"
+  version = "1.18.8-do.1"
   tags    = ["staging"]
 
   node_pool {
